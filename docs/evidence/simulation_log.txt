@@ -1,0 +1,149 @@
+== Assembling programs
+fibonacci: 12 instructions, 0 data words, 1 expected outputs
+sum_array: 12 instructions, 16 data words, 1 expected outputs
+vector_add: 16 instructions, 32 data words, 1 expected outputs
+bubble_sort: 23 instructions, 8 data words, 8 expected outputs
+memcpy: 22 instructions, 32 data words, 1 expected outputs
+io_decode: 16 instructions, 0 data words, 3 expected outputs
+== Unit tests
+tb_memories: PASS (267 checks)
+tb/tb_memories.v:85: $finish called at 2862000 (1ps)
+tb_decoder_rw: PASS (13 directed tests)
+tb/tb_decoder_rw.v:70: $finish called at 13000 (1ps)
+== System test (Harvard vs Von Neumann)
+============================================================
+ Program: fibonacci   (1 expected outputs)
+============================================================
+  [ OK ] Harvard   out #0 = 6765  (cycle 101)
+  [ OK ] VonNeumann out #0 = 6765  (cycle 103)
+------------------------------------------------------------
+                     Harvard    Von Neumann
+  instructions           102          102
+  loads / stores      0/2          0/2    
+  cycles                 102          104
+  CPI                  1.000        1.020
+  fetch cycles           102          102
+  fetch+data same cycle    2            0
+  speed-up (VN cycles / Harvard cycles) = 1.020
+------------------------------------------------------------
+ RESULT: PASS  (fibonacci)
+
+tb/tb_system.v:162: $finish called at 1095000 (1ps)
+============================================================
+ Program: sum_array   (1 expected outputs)
+============================================================
+  [ OK ] Harvard   out #0 = 136  (cycle 86)
+  [ OK ] VonNeumann out #0 = 136  (cycle 104)
+------------------------------------------------------------
+                     Harvard    Von Neumann
+  instructions            87           87
+  loads / stores     16/2         16/2    
+  cycles                  87          105
+  CPI                  1.000        1.207
+  fetch cycles            87           87
+  fetch+data same cycle   18            0
+  speed-up (VN cycles / Harvard cycles) = 1.207
+------------------------------------------------------------
+ RESULT: PASS  (sum_array)
+
+tb/tb_system.v:162: $finish called at 1105000 (1ps)
+============================================================
+ Program: vector_add   (1 expected outputs)
+============================================================
+  [ OK ] Harvard   out #0 = 1840  (cycle 150)
+  [ OK ] VonNeumann out #0 = 1840  (cycle 199)
+------------------------------------------------------------
+                     Harvard    Von Neumann
+  instructions           151          151
+  loads / stores     32/17        32/17   
+  cycles                 151          200
+  CPI                  1.000        1.325
+  fetch cycles           151          151
+  fetch+data same cycle   49            0
+  speed-up (VN cycles / Harvard cycles) = 1.325
+------------------------------------------------------------
+ RESULT: PASS  (vector_add)
+
+tb/tb_system.v:162: $finish called at 2055000 (1ps)
+============================================================
+ Program: bubble_sort   (8 expected outputs)
+============================================================
+  [ OK ] Harvard   out #0 = 1  (cycle 262)
+  [ OK ] Harvard   out #1 = 5  (cycle 267)
+  [ OK ] Harvard   out #2 = 7  (cycle 272)
+  [ OK ] Harvard   out #3 = 18  (cycle 277)
+  [ OK ] Harvard   out #4 = 23  (cycle 282)
+  [ OK ] Harvard   out #5 = 42  (cycle 287)
+  [ OK ] Harvard   out #6 = 64  (cycle 292)
+  [ OK ] Harvard   out #7 = 99  (cycle 297)
+  [ OK ] VonNeumann out #0 = 1  (cycle 352)
+  [ OK ] VonNeumann out #1 = 5  (cycle 359)
+  [ OK ] VonNeumann out #2 = 7  (cycle 366)
+  [ OK ] VonNeumann out #3 = 18  (cycle 373)
+  [ OK ] VonNeumann out #4 = 23  (cycle 380)
+  [ OK ] VonNeumann out #5 = 42  (cycle 387)
+  [ OK ] VonNeumann out #6 = 64  (cycle 394)
+  [ OK ] VonNeumann out #7 = 99  (cycle 401)
+------------------------------------------------------------
+                     Harvard    Von Neumann
+  instructions           301          301
+  loads / stores     64/40        64/40   
+  cycles                 301          405
+  CPI                  1.000        1.346
+  fetch cycles           301          301
+  fetch+data same cycle  104            0
+  speed-up (VN cycles / Harvard cycles) = 1.346
+------------------------------------------------------------
+ RESULT: PASS  (bubble_sort)
+
+tb/tb_system.v:162: $finish called at 4105000 (1ps)
+============================================================
+ Program: memcpy   (1 expected outputs)
+============================================================
+  [ OK ] Harvard   out #0 = 1520  (cycle 296)
+  [ OK ] VonNeumann out #0 = 1520  (cycle 393)
+------------------------------------------------------------
+                     Harvard    Von Neumann
+  instructions           297          297
+  loads / stores     64/33        64/33   
+  cycles                 297          394
+  CPI                  1.000        1.327
+  fetch cycles           297          297
+  fetch+data same cycle   97            0
+  speed-up (VN cycles / Harvard cycles) = 1.327
+------------------------------------------------------------
+ RESULT: PASS  (memcpy)
+
+tb/tb_system.v:162: $finish called at 3995000 (1ps)
+============================================================
+ Program: io_decode   (3 expected outputs)
+============================================================
+  [ OK ] Harvard   out #0 = 421  (cycle 9)
+  [ OK ] Harvard   out #1 = 195  (cycle 10)
+  [ OK ] VonNeumann out #0 = 421  (cycle 14)
+  [ OK ] Harvard   out #2 = 1  (cycle 15)
+  [ OK ] VonNeumann out #1 = 195  (cycle 16)
+  [ OK ] VonNeumann out #2 = 1  (cycle 24)
+------------------------------------------------------------
+                     Harvard    Von Neumann
+  instructions            16           16
+  loads / stores      4/5          4/5    
+  cycles                  16           25
+  CPI                  1.000        1.562
+  fetch cycles            16           16
+  fetch+data same cycle    9            0
+  speed-up (VN cycles / Harvard cycles) = 1.562
+------------------------------------------------------------
+ RESULT: PASS  (io_decode)
+
+tb/tb_system.v:162: $finish called at 305000 (1ps)
+Waveform written to build/waves.vcd (open with GTKWave)
+== Summary
+program      instructions  loads  stores  harvard_cycles  vonneumann_cycles  overlap_cycles  status
+fibonacci    102           0      2       102             104                2               PASS
+sum_array    87            16     2       87              105                18              PASS
+vector_add   151           32     17      151             200                49              PASS
+bubble_sort  301           64     40      301             405                104             PASS
+memcpy       297           64     33      297             394                97              PASS
+io_decode    16            4      5       16              25                 9               PASS
+ALL TESTS PASSED
