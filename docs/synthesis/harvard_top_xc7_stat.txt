@@ -1,0 +1,29 @@
+
+14. Printing statistics.
+
+=== harvard_top ===
+
+        +----------Local Count, excluding submodules.
+        | 
+      805 wires
+     1978 wire bits
+       49 public wires
+      578 public wire bits
+       12 ports
+      213 port bits
+     1097 cells
+        9   $scopeinfo
+        1   BUFG
+       62   CARRY4
+      343   FDRE
+        4   FDSE
+        2   IBUF
+        8   INV
+       66   LUT2
+       68   LUT3
+       77   LUT4
+      140   LUT5
+       90   LUT6
+      211   OBUF
+       16   RAM256X1S
+
