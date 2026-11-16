@@ -1,0 +1,7 @@
+build/
+*.vcd
+*.vvp
+__pycache__/
+.venv/
+venv/
+.DS_Store
