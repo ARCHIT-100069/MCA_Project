@@ -14,7 +14,7 @@ We built a Harvard-style memory organization in Verilog, with separate instructi
 | Speed-up of Harvard | 1.02x to **1.56x** | |
 
 - **Report (IEEE format):** [docs/report/phase1_report.pdf](docs/report/phase1_report.pdf)
-- **Prototype video:** _link to be added_ (see [docs/demo/video.md](docs/demo/video.md))
+- **Prototype video (Phase I demo):** [https://drive.google.com/file/d/1nOItqqYGjEf7bIux0CEANo1jN_VVqIMC/view?usp=sharing](https://drive.google.com/file/d/1nOItqqYGjEf7bIux0CEANo1jN_VVqIMC/view?usp=sharing)
 - **Block diagrams:** [Harvard](docs/diagrams/harvard_block_diagram.png), [shared memory](docs/diagrams/vonneumann_block_diagram.png)
 - **Waveform:** [docs/evidence/waveform_sum_array.png](docs/evidence/waveform_sum_array.png)
 - **Results:** [docs/evidence/results_table.md](docs/evidence/results_table.md), [CPI chart](docs/evidence/cpi_vs_memfraction.png), [cycles chart](docs/evidence/cycles_comparison.png)
