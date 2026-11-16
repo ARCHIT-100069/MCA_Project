@@ -38,6 +38,6 @@ if [[ "${1:-}" == "--vcd" ]]; then
 fi
 
 echo "== Summary"
-column -s, -t build/results.csv
+if command -v column > /dev/null; then column -s, -t build/results.csv; else tr ',' '\t' < build/results.csv; fi
 if grep -q FAIL build/results.csv; then echo "SOME TESTS FAILED"; exit 1; fi
 echo "ALL TESTS PASSED"
