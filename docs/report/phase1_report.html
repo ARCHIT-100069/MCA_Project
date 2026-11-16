@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Instruction and Data Memory Hierarchy - Phase I Report</title>
+<!--
+  IEEE conference-style report (two columns, Times, 10 pt).
+  Build the PDF with:  ./docs/report/build_pdf.sh
+  Authors: Archit Gosain and Phalak Sharma (lead writers), with sections from
+  all five members (see Individual Contributions).
+-->
+<style>
+  @page { size: A4; margin: 19mm 15mm 22mm 15mm; }
+  html { font-family: "Times New Roman", Times, serif; font-size: 10pt; line-height: 1.22; color: #000; background: #fff; }
+  body { margin: 0; }
+  .title-block { text-align: center; margin-bottom: 12pt; }
+  h1.title { font-size: 22pt; font-weight: normal; margin: 0 0 10pt; line-height: 1.1; }
+  .authors { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4pt; font-size: 9pt; margin-bottom: 4pt; }
+  .authors b { display: block; font-size: 10pt; font-weight: normal; }
+  .authors i { font-size: 8.5pt; }
+  .affil { font-size: 9pt; font-style: italic; }
+  .cols { column-count: 2; column-gap: 6mm; text-align: justify; hyphens: auto; }
+  .abstract, .keywords { font-weight: bold; font-size: 9pt; margin: 0 0 6pt; }
+  .abstract i, .keywords i { font-weight: bold; }
+  h2 { font-size: 10pt; font-weight: normal; font-variant: small-caps; text-align: center; margin: 10pt 0 4pt; letter-spacing: .02em; }
+  h3 { font-size: 10pt; font-weight: normal; font-style: italic; margin: 6pt 0 2pt; }
+  p { margin: 0 0 4pt; text-indent: 1em; }
+  p.noind { text-indent: 0; }
+  figure { margin: 6pt 0; text-align: center; break-inside: avoid; }
+  figure img { width: 100%; }
+  figure.wide { column-span: all; margin: 8pt 0; }
+  figure.wide img { width: 92%; }
+  figcaption { font-size: 8pt; text-align: justify; margin-top: 2pt; }
+  table { border-collapse: collapse; width: 100%; font-size: 7.6pt; margin: 4pt 0 6pt; break-inside: avoid; }
+  caption { font-size: 8pt; font-variant: small-caps; margin-bottom: 3pt; }
+  th, td { border-top: .5pt solid #000; border-bottom: .5pt solid #000; padding: 1.5pt 2.5pt; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  td.l, th.l { text-align: left; }
+  .wide-table { column-span: all; }
+  code, .mono { font-family: "Courier New", monospace; font-size: 8.6pt; }
+  ul, ol { margin: 0 0 4pt 1.2em; padding: 0; }
+  li { margin-bottom: 1.5pt; }
+  .eq { text-align: center; margin: 4pt 0; font-style: italic; }
+  .refs { font-size: 8pt; }
+  .refs li { margin-bottom: 2pt; }
+  ol.refs { list-style: none; margin-left: 0; counter-reset: ref; }
+  ol.refs li { counter-increment: ref; padding-left: 2.2em; text-indent: -2.2em; }
+  ol.refs li::before { content: "[" counter(ref) "] "; display: inline-block; width: 2.2em; text-indent: 0; }
+  .contrib td { text-align: left; vertical-align: top; }
+</style>
+</head>
+<body>
+
+<div class="title-block">
+  <h1 class="title">Instruction and Data Memory Hierarchy:<br>A Harvard-Style Memory Organization in Verilog<br>Compared with a Shared-Memory Baseline</h1>
+  <div class="authors">
+    <div><b>Archit Gosain</b><i>Team lead: core, ISA, integration</i></div>
+    <div><b>Phalak Sharma</b><i>Co-lead: memory subsystem</i></div>
+    <div><b>Mukund Mangla</b><i>Verification</i></div>
+    <div><b>Jatin</b><i>Assembler and programs</i></div>
+    <div><b>Kumar Sanu</b><i>Diagrams, synthesis, demo</i></div>
+  </div>
+  <div class="affil">Modern Computer Architecture, B.Tech (CS&amp;AI), Project 9, Phase I report</div>
+</div>
+
+<div class="cols">
+
+<p class="abstract noind"><i>Abstract</i>&mdash;Instructions and data reach a processor through its memory organization. When one memory port serves both, every load or store competes with the next instruction fetch. This structural hazard is the "Von Neumann bottleneck." We implement in Verilog a Harvard-style organization with an independent instruction memory and data memory. The design also contains a program counter, a data address decoder with memory-mapped I/O and read/write control logic. The same 16-bit single-cycle processor core (MH-16) is connected to a single-ported unified memory as a baseline, so the two organizations differ only in their memory system. Six assembled benchmark programs run on both machines side by side in a self-checking testbench. Both machines produce identical outputs and identical final data memories. The Harvard machine completes every instruction in one cycle (CPI&nbsp;=&nbsp;1.000). The shared-memory machine follows CPI&nbsp;=&nbsp;1&nbsp;+&nbsp;<i>f</i><sub>mem</sub> exactly, from 1.020 for a compute-bound program to 1.562 for a memory-bound one. This gives Harvard speed-ups of up to 1.56&times;. Yosys synthesis for a Xilinx 7-series target shows the cost of each organization in LUTs, flip-flops and distributed RAM. Phase II will add a shared lower-level memory behind split level-1 memories.</p>
+
+<p class="keywords noind"><i>Index Terms</i>&mdash;Harvard architecture, Von Neumann architecture, memory hierarchy, instruction memory, data memory, address decoding, structural hazard, Verilog, CPI.</p>
+
+<h2>I. Introduction</h2>
+<p>A stored-program computer must move two kinds of information from memory: the instructions that say what to do and the data they operate on. Von Neumann's EDVAC design stored both in one memory reached through one path [1]. That is simple and flexible, but the path can carry only one access at a time. The Harvard Mark I used separate storage for instructions and data [2]. Modern processors combine the two ideas. Main memory is unified, but the level-1 caches next to the pipeline are split into an instruction cache and a data cache, a "modified Harvard" organization [3], [4].</p>
+<p>This project, Project 9 of the course, implements a simplified Harvard memory organization at the register-transfer level, connects it to a processor, runs real programs on it and measures the effect of separating the paths. Our goals for Phase I are:</p>
+<ul>
+  <li>build the suggested modules: program counter, instruction memory, data memory, address decoder and read/write control;</li>
+  <li>connect them to a working processor core and run programs that mix instruction fetches with data accesses;</li>
+  <li>build a shared-memory baseline around the <i>same</i> core and compare the two organizations quantitatively, in cycles, CPI and hardware cost.</li>
+</ul>
+
+<h2>II. Literature Review</h2>
+<h3>A. Von Neumann and Harvard organizations</h3>
+<p>The EDVAC report [1] described a single store for both program and data. Treating instructions as data made self-modifying code, loaders and compilers natural. The Harvard Mark I [2] read its instructions from punched paper tape and kept its numbers in separate counters, so the two could never interfere. Hennessy and Patterson describe the cost of the shared design as a <i>structural hazard</i>: in a pipeline with one memory port, a load or store in the memory stage blocks an instruction fetch in the same cycle [3], [4]. Harris and Harris show the same conflict at the single-cycle level. Their single-cycle MIPS and RISC-V processors assume separate instruction and data memories, because one memory cannot be read twice in one cycle [8].</p>
+<h3>B. The memory wall and split caches</h3>
+<p>Wulf and McKee pointed out that processor speed was improving much faster than memory speed. Memory latency would therefore come to dominate performance unless the memory system hid it [6]. The standard answer is a hierarchy of small fast memories in front of large slow ones. Smith's survey of cache memories discusses unified versus split instruction/data caches [5]. Splitting doubles the bandwidth available to the pipeline and lets each cache be tuned to its access pattern, at the price of some capacity that a unified cache could share. Hill and Smith later quantified how associativity affects miss rates [15], and Jouppi showed that small helper structures such as victim caches and stream buffers recover much of the performance a simple cache loses [7].</p>
+<h3>C. Harvard organizations in current hardware</h3>
+<p>The Harvard idea is common in embedded processors. ARM Cortex-M3/M4 cores have separate instruction-code and data-code buses (I-Code and D-Code), plus a system bus. Instruction fetches and data accesses therefore proceed in parallel [9]. The RISC-V ISA has a <code>FENCE.I</code> instruction. Software must execute it after writing instructions as data because the instruction and data paths may be separate and not coherent with each other [13]. This is the main programming-model cost of a Harvard organization.</p>
+<h3>D. Gap addressed by this project</h3>
+<p>Textbooks state the benefit of separate paths qualitatively, or inside a full pipeline where many effects mix. We isolate the memory organization: one processor core, two memory systems, the same programs, and cycle-exact counters. This lets us check the simple analytical model in Section&nbsp;IV against RTL simulation and synthesis.</p>
+
+<h2>III. Proposed Solution</h2>
+<h3>A. The MH-16 processor core</h3>
+<p>We designed a small 16-bit instruction set so that programs are easy to write and to read in waveforms. It has eight 16-bit registers (R0 reads as zero), 16-bit instructions and 16-bit data words. The instructions are R-type ALU operations (<code>add sub and or xor slt sll srl</code>), <code>addi</code>, <code>lw</code>/<code>sw</code> with base+offset addressing, <code>beq</code>/<code>bne</code>, <code>li</code> (9-bit immediate), <code>j</code> and <code>halt</code>. The core (<code>cpu_core.v</code>) is single-cycle: decode, register read, ALU, data access and write-back all happen in one clock.</p>
+<p>The core does not know which memory organization it is attached to. It exposes an instruction port, a data port and a <code>stall</code> input. A stall blocks the program counter and register write-back for one cycle. All memory-organization behavior therefore lives outside the core, so the comparison is fair.</p>
+
+<figure class="wide"><img src="../diagrams/harvard_block_diagram.png" alt="Harvard block diagram">
+<figcaption>Fig. 1. Proposed Harvard organization (<code>harvard_top.v</code>). The instruction path (green) and the data path (orange) have independent memories and buses.</figcaption></figure>
+
+<h3>B. Harvard memory organization</h3>
+<p>Fig.&nbsp;1 shows the proposed design. Its modules are:</p>
+<ul>
+  <li><b>Program counter</b> (<code>program_counter.v</code>): an 8-bit register that updates only on commit. It selects the next instruction: <i>pc</i>+1, branch target, jump target, or hold on <code>halt</code>.</li>
+  <li><b>Instruction memory</b> (<code>instr_mem.v</code>): a 256&times;16 read-only memory with an asynchronous read port. It is loaded from the assembler's hex file, and unused words hold <code>HALT</code>.</li>
+  <li><b>Data memory</b> (<code>data_mem.v</code>): a 256&times;16 RAM with a synchronous write and an asynchronous read. Its output is forced to zero when it is not selected.</li>
+  <li><b>Address decoder</b> (<code>addr_decoder.v</code>): maps the 16-bit data address. 0x0000&ndash;0x00FF selects data memory, 0x0100 is a write-only output port, 0x0101 is a read-only cycle counter, and every other address raises <code>fault</code>.</li>
+  <li><b>Read/write control</b> (<code>rw_control.v</code>): combines the core's request, the commit signal and the decoder's selects into device enables and a read-data multiplexer. A write reaches a device only when the instruction commits, so a stalled store can never write twice. Writes to read-only space, reads of write-only space and accesses to unmapped addresses are flagged as bus errors.</li>
+</ul>
+<p>Because the instruction memory and the data memory have separate ports, a load or store and the next instruction fetch happen in the same cycle, so every instruction takes one clock.</p>
+
+<h3>C. Shared-memory baseline</h3>
+<p>The baseline (Fig.&nbsp;2, <code>vonneumann_top.v</code>) connects the same core to one single-ported 512&times;16 <code>unified_mem</code>. Code is in words 0x000&ndash;0x0FF and data in 0x100&ndash;0x1FF. A two-state port arbiter controls the port. In <b>FETCH</b> the port address is the PC. ALU, branch and immediate instructions commit straight away. A load or store is copied into an instruction register (IR), and its data address goes into a memory address register (MAR); the core is stalled. In <b>DATA</b> the port address is the MAR and the latched instruction commits. Synthesis showed that our first baseline drove the port address from the core's combinational address output. That formed a structural loop from the memory's output, through the ALU, back to its own address. The MAR breaks this loop, as in classic accumulator machines.</p>
+
+<figure><img src="../diagrams/vonneumann_block_diagram.png" alt="Von Neumann block diagram">
+<figcaption>Fig. 2. Baseline: the same core with one shared single-port memory and a FETCH/DATA port arbiter.</figcaption></figure>
+
+<h3>D. Analytical model</h3>
+<p>Let <i>N</i> be the number of instructions executed, of which <i>L</i> are loads and <i>S</i> are stores, and let <i>f</i><sub>mem</sub>&nbsp;=&nbsp;(<i>L</i>+<i>S</i>)/<i>N</i>. With separate ports, every instruction takes one cycle. With one port, every memory instruction takes two:</p>
+<p class="eq">CPI<sub>Harvard</sub> = 1, &nbsp;&nbsp; CPI<sub>shared</sub> = 1 + <i>f</i><sub>mem</sub>, &nbsp;&nbsp; speed-up = 1 + <i>f</i><sub>mem</sub>.</p>
+<p>This is the structural-hazard term of the classic pipeline CPI equation [3], here isolated from all other hazards.</p>
+
+<h3>E. Tool flow and verification</h3>
+<p>All RTL is synthesizable Verilog [10], [14] split into one module per file. Programs are written in MH-16 assembly and converted to hex images by a two-pass Python assembler (<code>asm.py</code>). The assembler supports labels, pseudo-instructions (<code>nop</code>, <code>mov</code>, <code>out</code>), data directives and an <code>.expect</code> directive that records the values the program must output. The system testbench (<code>tb_system.v</code>) loads one program into both machines and runs them together. It then checks that (i) each output-port value matches the expected list, (ii) both machines halt with no bus error, (iii) both execute the same number of instructions and (iv) the final 256 data words are identical. Two unit testbenches cover the memories (267 checks) and the decoder with read/write control (13 directed cases, including stalled writes and illegal accesses). Simulation uses Icarus Verilog [11], waveforms are dumped as VCD, and synthesis uses Yosys [12] for a Xilinx 7-series target.</p>
+
+<p class="noind">The six benchmark programs are chosen to cover a range of <i>f</i><sub>mem</sub>:</p>
+<ul>
+  <li><b>fibonacci</b>: computes F(20) in registers (compute-bound);</li>
+  <li><b>sum_array</b>: adds 16 array words;</li>
+  <li><b>vector_add</b>: computes C[i] = A[i] + B[i] for 16 elements;</li>
+  <li><b>memcpy</b>: copies 32 words, then checksums the copy;</li>
+  <li><b>bubble_sort</b>: sorts 8 words in place and prints them;</li>
+  <li><b>io_decode</b>: tests the decoder boundaries (words 0x00 and 0xFF), the output port and the cycle counter.</li>
+</ul>
+
+<h2>IV. Prototype Results</h2>
+<p>All six programs pass on both machines, and all unit tests pass. Table&nbsp;I lists the counters reported by the testbench.</p>
+
+<table>
+<caption>Table I. Measured performance (same programs, same core)</caption>
+<thead><tr><th>Program</th><th>N</th><th>L+S</th><th><i>f</i><sub>mem</sub></th><th>Harv. cyc.</th><th>Shared cyc.</th><th>CPI<sub>sh</sub></th><th>Speed-up</th></tr></thead>
+<tbody>
+<tr><td>fibonacci</td><td>102</td><td>2</td><td>0.020</td><td>102</td><td>104</td><td>1.020</td><td>1.020</td></tr>
+<tr><td>sum_array</td><td>87</td><td>18</td><td>0.207</td><td>87</td><td>105</td><td>1.207</td><td>1.207</td></tr>
+<tr><td>vector_add</td><td>151</td><td>49</td><td>0.325</td><td>151</td><td>200</td><td>1.325</td><td>1.325</td></tr>
+<tr><td>memcpy</td><td>297</td><td>97</td><td>0.327</td><td>297</td><td>394</td><td>1.327</td><td>1.327</td></tr>
+<tr><td>bubble_sort</td><td>301</td><td>104</td><td>0.346</td><td>301</td><td>405</td><td>1.346</td><td>1.346</td></tr>
+<tr><td>io_decode</td><td>16</td><td>9</td><td>0.562</td><td>16</td><td>25</td><td>1.562</td><td>1.562</td></tr>
+</tbody></table>
+
+<p>The Harvard machine's CPI is exactly 1.000 for every program. The counter of cycles in which an instruction fetch and a data access happen together equals <i>L</i>+<i>S</i>, which confirms that every data access overlaps a fetch. The shared machine's CPI matches 1&nbsp;+&nbsp;<i>f</i><sub>mem</sub> to three decimal places (Fig.&nbsp;3). Its cost is therefore a pure structural hazard. The speed-up depends only on how often a program touches data memory: 2% for fibonacci, about 35% for typical array code and 56% for the decoder test.</p>
+
+<figure><img src="../evidence/cpi_vs_memfraction.png" alt="CPI vs memory fraction">
+<figcaption>Fig. 3. Measured CPI against the fraction of loads and stores. The dashed lines are the analytical model of Section III-D.</figcaption></figure>
+
+<p>Fig.&nbsp;4 shows the first cycles of <code>sum_array</code>. On the Harvard side the load at <i>pc</i>&nbsp;=&nbsp;4 reads data memory in the same cycle in which the instruction is fetched. On the shared side the arbiter raises <code>stall</code>, the PC holds the value 4 for two cycles, and the shared address changes from 0x004 (fetch) to 0x110 (data word 0x10).</p>
+
+<figure class="wide"><img src="../evidence/waveform_sum_array.png" alt="Waveform">
+<figcaption>Fig. 4. Simulation waveform of <code>sum_array</code> on both machines (rendered from the VCD dump). Blue: Harvard. Orange: shared memory.</figcaption></figure>
+
+<table>
+<caption>Table II. Yosys synthesis, Xilinx 7-series (<code>synth_xilinx</code>)</caption>
+<thead><tr><th>Resource</th><th>Harvard</th><th>Shared</th></tr></thead>
+<tbody>
+<tr><td>LUTs (LUT2&ndash;LUT6)</td><td>441</td><td>489</td></tr>
+<tr><td>Flip-flops (FDRE/FDSE)</td><td>347</td><td>324</td></tr>
+<tr><td>Distributed RAM (RAM256X1S)</td><td>16</td><td>32</td></tr>
+<tr><td>CARRY4</td><td>62</td><td>54</td></tr>
+</tbody></table>
+
+<p>Table&nbsp;II should be read with care. In the Harvard design the read-only instruction memory is folded into LUT logic for the program that was loaded (<code>bubble_sort</code>), and only data memory uses distributed RAM. The shared design keeps both code and data in 512 words of RAM, so its program can change at run time. It also needs the arbiter, a 16-bit IR, an 8-bit MAR and a two-way port-address multiplexer. Both designs include 192 flip-flops of 32-bit performance counters, which are instrumentation and not part of either memory system. Timing closure and maximum frequency will be measured with Vivado in Phase II. With asynchronous-read memories, the Harvard critical path is fetch&nbsp;&rarr;&nbsp;decode&nbsp;&rarr;&nbsp;ALU&nbsp;&rarr;&nbsp;data read&nbsp;&rarr;&nbsp;write-back. In the shared design the MAR splits this path across two cycles for memory instructions.</p>
+
+<h3>Discussion</h3>
+<p>Separating the paths removes the fetch/data conflict completely. The price is a fixed split of capacity between code and data, two address decoders instead of one, and the loss of the simple "code is data" model. Program loading and self-modifying code need an extra path, which is why RISC-V needs <code>FENCE.I</code> [13]. The shared design is smaller in decode logic and more flexible, but its performance falls as programs touch memory more often. This is the trade-off the modified-Harvard hierarchy of real processors resolves. Small split memories close to the core give fetch and data their own bandwidth, and a larger unified memory behind them keeps a single address space.</p>
+
+<h2>V. Plan for Phase II</h2>
+<ul>
+  <li>Add the optional <b>shared lower-level memory</b>: a unified main memory with configurable latency behind the instruction and data memories. These become small direct-mapped L1 instruction and data caches with a miss arbiter.</li>
+  <li>Measure hit rates, average memory access time and CPI for the split-L1 design, and compare it with a unified L1 of the same total size.</li>
+  <li>Replace the asynchronous memories with synchronous block RAM and report Vivado timing (maximum frequency) on an Artix-7 board.</li>
+  <li>Add more benchmarks: matrix multiply in software and a string search.</li>
+</ul>
+
+<h2>VI. Individual Contributions</h2>
+<table class="contrib">
+<thead><tr><th class="l">Member</th><th class="l">Contribution (files)</th></tr></thead>
+<tbody>
+<tr><td>Archit Gosain (lead)</td><td>MH-16 ISA definition, processor core, ALU, register file, program counter, performance counters, Harvard and shared top-level integration, the MAR fix found in synthesis, report Sections III&ndash;IV, repository management (<code>rtl/isa_defs.vh, cpu_core.v, alu.v, regfile.v, program_counter.v, perf_counters.v, harvard_top.v, vonneumann_top.v</code>, <code>README.md</code>).</td></tr>
+<tr><td>Phalak Sharma (co-lead)</td><td>Memory subsystem: instruction memory, data memory, unified memory, data address map and decoder, read/write control. Fixed ROM initialization for synthesis. Report Abstract, Sections I&ndash;II and V, and final editing (<code>rtl/instr_mem.v, data_mem.v, unified_mem.v, addr_decoder.v, rw_control.v</code>, <code>docs/report/</code>).</td></tr>
+<tr><td>Mukund Mangla</td><td>Verification: self-checking system testbench, memory and decoder unit testbenches, regression script, waveform rendering (<code>tb/*.v, scripts/run_all.sh, scripts/plot_waveform.py</code>).</td></tr>
+<tr><td>Jatin</td><td>Two-pass MH-16 assembler and the six benchmark programs with expected outputs (<code>scripts/asm.py, programs/*.asm</code>).</td></tr>
+<tr><td>Kumar Sanu</td><td>Block diagrams, Yosys synthesis flow and results, result charts and tables, demo video script and recording (<code>docs/diagrams/, docs/synthesis/, scripts/plot_results.py, docs/demo/</code>).</td></tr>
+</tbody></table>
+
+<h2>VII. Conclusion</h2>
+<p>We built and verified a Harvard-style instruction/data memory organization in Verilog and compared it with a shared-memory baseline built around the same processor core. On six programs the Harvard design always reaches CPI&nbsp;=&nbsp;1. The shared design pays exactly one extra cycle per load or store, giving speed-ups from 1.02&times; to 1.56&times;, in agreement with the analytical model. Phase II extends the prototype into a two-level hierarchy with a shared lower-level memory.</p>
+
+<h2>References</h2>
+<ol class="refs">
+<li>J. von Neumann, "First draft of a report on the EDVAC," Moore School of Electrical Engineering, Univ. of Pennsylvania, Philadelphia, PA, USA, 1945.</li>
+<li>H. H. Aiken and G. M. Hopper, "The automatic sequence controlled calculator," <i>Electrical Engineering</i>, vol. 65, no. 8&ndash;9, pp. 384&ndash;391, 1946.</li>
+<li>J. L. Hennessy and D. A. Patterson, <i>Computer Architecture: A Quantitative Approach</i>, 6th ed. Cambridge, MA, USA: Morgan Kaufmann, 2017.</li>
+<li>D. A. Patterson and J. L. Hennessy, <i>Computer Organization and Design RISC-V Edition: The Hardware Software Interface</i>, 2nd ed. Cambridge, MA, USA: Morgan Kaufmann, 2020.</li>
+<li>A. J. Smith, "Cache memories," <i>ACM Computing Surveys</i>, vol. 14, no. 3, pp. 473&ndash;530, Sep. 1982.</li>
+<li>W. A. Wulf and S. A. McKee, "Hitting the memory wall: Implications of the obvious," <i>ACM SIGARCH Computer Architecture News</i>, vol. 23, no. 1, pp. 20&ndash;24, Mar. 1995.</li>
+<li>N. P. Jouppi, "Improving direct-mapped cache performance by the addition of a small fully-associative cache and prefetch buffers," in <i>Proc. 17th Annu. Int. Symp. Computer Architecture (ISCA)</i>, 1990, pp. 364&ndash;373.</li>
+<li>D. M. Harris and S. L. Harris, <i>Digital Design and Computer Architecture</i>, 2nd ed. Waltham, MA, USA: Morgan Kaufmann, 2012.</li>
+<li>J. Yiu, <i>The Definitive Guide to ARM Cortex-M3 and Cortex-M4 Processors</i>, 3rd ed. Oxford, U.K.: Newnes, 2014.</li>
+<li><i>IEEE Standard for Verilog Hardware Description Language</i>, IEEE Std 1364-2005, 2006.</li>
+<li>S. Williams, "Icarus Verilog." [Online]. Available: https://steveicarus.github.io/iverilog/</li>
+<li>C. Wolf, "Yosys Open SYnthesis Suite." [Online]. Available: https://yosyshq.net/yosys/</li>
+<li>A. Waterman and K. Asanovi&#263;, Eds., <i>The RISC-V Instruction Set Manual, Volume I: Unprivileged ISA</i>, Document Version 20191213, RISC-V International, 2019.</li>
+<li>S. Palnitkar, <i>Verilog HDL: A Guide to Digital Design and Synthesis</i>, 2nd ed. Upper Saddle River, NJ, USA: Prentice Hall, 2003.</li>
+<li>M. D. Hill and A. J. Smith, "Evaluating associativity in CPU caches," <i>IEEE Trans. Comput.</i>, vol. 38, no. 12, pp. 1612&ndash;1630, Dec. 1989.</li>
+</ol>
+
+</div>
+</body>
+</html>
